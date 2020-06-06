@@ -18,11 +18,9 @@ public class NodeDAO implements DAO<Node> {
     }
 
     @Override
-    public void insertBatch(ArrayList<Node> list) {
-        String query = "INSERT INTO NODES (ID, VERSION, _TIMESTAMP, UID, USER_NAME, CHANGESET, LAT, LON) VALUES (?,?,?,?,?,?,?,?)";
+    public void insertBatch(ArrayList<Node> list, PreparedStatement statement) {
         Timestamp timestamp;
         try {
-            PreparedStatement statement = connection.prepareStatement(query);
             for (Node node : list) {
                 timestamp = new Timestamp(node.getTimestamp().toGregorianCalendar().getTimeInMillis());
                 statement.setBigDecimal(1, new BigDecimal(node.getId()));
@@ -41,17 +39,14 @@ public class NodeDAO implements DAO<Node> {
             long finishTime = System.currentTimeMillis();
             this.timePassed += finishTime - startTime;
             this.records += list.size();
-            statement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
     @Override
-    public void insertPreparedStatement(Node node) {
-        String query = "INSERT INTO NODES (ID, VERSION, _TIMESTAMP, UID, USER_NAME, CHANGESET, LAT, LON) VALUES (?,?,?,?,?,?,?,?)";
+    public void insertPreparedStatement(Node node, PreparedStatement statement) {
         Timestamp timestamp = new Timestamp(node.getTimestamp().toGregorianCalendar().getTimeInMillis());
         try {
-            PreparedStatement statement = connection.prepareStatement(query);
             statement.setBigDecimal(1, new BigDecimal(node.getId()));
             statement.setBigDecimal(2, new BigDecimal(node.getVersion()));
             statement.setTimestamp(3, timestamp);
@@ -72,12 +67,10 @@ public class NodeDAO implements DAO<Node> {
         }
     }
     @Override
-    public void insertStatement(Node node) {
-        Statement stmt;
+    public void insertStatement(Node node, Statement statement) {
         String sql;
         try {
             connection.setAutoCommit(false);
-            stmt = connection.createStatement();
             Timestamp timestamp = new Timestamp(node.getTimestamp().toGregorianCalendar().getTimeInMillis());
             sql = "INSERT INTO NODES (ID, VERSION, _TIMESTAMP, UID, USER_NAME, CHANGESET, LAT, LON) VALUES " +
                     "(" +
@@ -91,12 +84,11 @@ public class NodeDAO implements DAO<Node> {
                     node.getLon().toString().replace(',', '.') +
                     ");";
             long startTime = System.currentTimeMillis();
-            stmt.executeUpdate(sql);
+            statement.executeUpdate(sql);
             connection.commit();
             long finishTime = System.currentTimeMillis();
             this.timePassed += finishTime - startTime;
             this.records += 1;
-            stmt.close();
         } catch (SQLException e) {
             try {
                 connection.rollback();
